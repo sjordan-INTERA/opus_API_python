@@ -18,7 +18,7 @@ NGVD 29 selection rule
 
 Notes
 -----
-- Uses modest threading (default 2 workers) because these are web requests.
+- Uses modest threading -> default 2 workers
 - Writes chunk CSVs immediately so a failure does not lose prior work.
 """
 
@@ -291,16 +291,16 @@ def combine_chunk_csvs(output_dir, combined_csv_name="ngs_all_chunks_combined.cs
 
 
 def main():
-    input_xlsx = "Marks_for_NAVD88.xlsx"
-    output_dir = "ngs_chunks"
-    chunk_size = 500
+    input_xlsx = "Supplementary_list.xlsx"
+    output_dir = "ngs_chunks_temp"
+    chunk_size = 50
     max_workers = 2
     pause_between_chunks = 2
 
     os.makedirs(output_dir, exist_ok=True)
 
     df = pd.read_excel(input_xlsx)
-    # df = df.head(50)
+    df = df.head(50)
 
     if "PID" not in df.columns:
         raise ValueError("Could not find a 'PID' column in the workbook.")
@@ -309,8 +309,8 @@ def main():
     total_chunks = math.ceil(len(pids) / chunk_size)
 
     for chunk_idx, (start_idx, pid_chunk) in enumerate(
-        chunk_list(pids, chunk_size), start=1
-    ):
+            chunk_list(pids, chunk_size), start=1
+        ):
         end_idx = start_idx + len(pid_chunk) - 1
 
         out_csv = os.path.join(
@@ -329,6 +329,7 @@ def main():
 
         t0 = time.time()
         df_chunk = scrape_chunk(pid_chunk, max_workers=max_workers)
+        # print(df_chunk)
         df_chunk.to_csv(out_csv, index=False)
         elapsed = time.time() - t0
 
@@ -345,8 +346,8 @@ def main():
 
     print("All chunks complete.")
 
-    # Optional: uncomment if you want to auto-combine at the end
-    # combine_chunk_csvs(output_dir)
+    # Auto-combine chunks at the end
+    combine_chunk_csvs(output_dir)
 
 
 if __name__ == "__main__":
